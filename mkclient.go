@@ -36,6 +36,7 @@ func makeClient(s *swagger.API) ([]byte, error) {
 			proto := responseSchema.Prototype
 			m.Returns = proto.String()
 			m.ReturnsComma = m.Returns + ", "
+			m.ReturnVar = "response, "
 			pkgPath := proto.PkgPath()
 			if pkgPath != "" {
 				imps[pkgPath] = struct{}{}
@@ -99,6 +100,7 @@ type method struct {
 	Args         string
 	Returns      string
 	ReturnsComma string
+	ReturnVar    string
 	Queries      []query
 	Body         *body
 }

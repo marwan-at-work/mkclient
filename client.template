@@ -59,12 +59,12 @@ func (c *client) {{ .Name }}(ctx context.Context{{ if .Args }}, {{ .Args }}{{ en
 	{{ if .Body }}
 		err := json.NewEncoder(&requestBody).Encode({{ .Body.Name }})
 		if err != nil {
-			return {{ .ReturnsComma }}err
+			return {{ .ReturnVar }}err
 		}
 	{{ end }}
 	req, err := http.NewRequest("{{ .Method }}", c.address, &requestBody)
 	if err != nil {
-		return {{ .ReturnsComma }}err
+		return {{ .ReturnVar }}err
 	}
 	req = req.WithContext(ctx)
 	req.URL.Path = filepath.Join(req.URL.Path, "{{ .Path }}")
@@ -75,16 +75,16 @@ func (c *client) {{ .Name }}(ctx context.Context{{ if .Args }}, {{ .Args }}{{ en
 	req.URL.RawQuery = query.Encode()
 	resp, err := c.c.Do(req)
 	if err != nil {
-		return {{ .ReturnsComma }}err
+		return {{ .ReturnVar }}err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		bts, _ := ioutil.ReadAll(resp.Body)
-		return {{ .ReturnsComma }}respErr{string(bts), resp.StatusCode}
+		return {{ .ReturnVar }}respErr{string(bts), resp.StatusCode}
 	}
 	{{ if  .Returns }}
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	{{ end }}
-	return {{ .ReturnsComma }}err
+	return {{ .ReturnVar }}err
 }
 {{ end }}
