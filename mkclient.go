@@ -1,4 +1,4 @@
-package mkrest
+package mkclient
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	"marwan.io/swag/swagger"
 )
 
-//go:generate esc -o template.go -pkg mkrest client.template
+//go:generate esc -o template.go -pkg mkclient client.template
 
 // MakeClient creates a client package based on the swagger schema
 func MakeClient(s *swagger.API) error {
