@@ -1,0 +1,90 @@
+package client
+
+import (
+	"bytes"
+	"net/url"
+	"context"
+	"net/http"
+	"path/filepath"
+	"encoding/json"
+	"io/ioutil"
+	{{ range .Imports }}
+	"{{ . }}"
+	{{ end }}
+)
+
+type respErr struct {
+	msg string
+	status int
+}
+
+func (re respErr) Status() int {
+	return re.status
+}
+
+func (re respErr) Error() string {
+	return re.msg
+}
+
+// Client interface
+type Client interface {
+	{{ range .Methods }}
+		{{ .Name }}(ctx context.Context{{ if .Args }}, {{ .Args }}{{ end }}) ({{ .ReturnsComma }}error)
+	{{ end }}
+}
+
+// NewClient returns Client
+func NewClient(address string, c *http.Client) (Client, error) {
+	_, err := url.Parse(address)
+	if err != nil {
+		return nil, err
+	}
+	if c == nil {
+		c = http.DefaultClient
+	}
+	return &client{address, c}, nil
+}
+
+type client struct {
+	address string
+	c       *http.Client
+}
+
+{{ range .Methods }}
+func (c *client) {{ .Name }}(ctx context.Context{{ if .Args }}, {{ .Args }}{{ end }}) ({{ .ReturnsComma }}error) {
+	{{ if  .Returns }}
+	var response {{ .Returns }}
+	{{ end }}
+	var requestBody bytes.Buffer
+	{{ if .Body }}
+		err := json.NewEncoder(&requestBody).Encode({{ .Body.Name }})
+		if err != nil {
+			return {{ .ReturnsComma }}err
+		}
+	{{ end }}
+	req, err := http.NewRequest("{{ .Method }}", c.address, &requestBody)
+	if err != nil {
+		return {{ .ReturnsComma }}err
+	}
+	req = req.WithContext(ctx)
+	req.URL.Path = filepath.Join(req.URL.Path, "{{ .Path }}")
+	query := req.URL.Query()
+	{{ range .Queries }}
+	query.Set("{{ .Name }}", {{ .Value }})
+	{{ end }}
+	req.URL.RawQuery = query.Encode()
+	resp, err := c.c.Do(req)
+	if err != nil {
+		return {{ .ReturnsComma }}err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		bts, _ := ioutil.ReadAll(resp.Body)
+		return {{ .ReturnsComma }}respErr{string(bts), resp.StatusCode}
+	}
+	{{ if  .Returns }}
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	{{ end }}
+	return {{ .ReturnsComma }}err
+}
+{{ end }}
