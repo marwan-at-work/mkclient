@@ -1,6 +1,6 @@
 # mkclient
 
-A package that generates a Go client from a [Swagger schema](github.com/marwan-at-work/swag)
+A package that generates a Go client from a [Swagger schema](https://github.com/marwan-at-work/swag)
 
 ### Usage
 
